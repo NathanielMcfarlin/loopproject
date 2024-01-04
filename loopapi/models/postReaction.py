@@ -1,8 +1,12 @@
 from django.db import models
 
 
-class PostReaction(models.Model):
-  """Database model for tracking events"""
+class PlatformPostReaction(models.Model):
+    post = models.ForeignKey("PlatformPost", on_delete=models.CASCADE, related_name="platform_reactions")
+    reaction = models.ForeignKey("Reaction", on_delete=models.CASCADE, related_name="platform_post_reactions")
+    # other fields as needed
 
-  reaction_id = models.ForeignKey("Reaction", on_delete=models.CASCADE, related_name="postReaction")
-  post_id = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="postReaction")
+class GamePostReaction(models.Model):
+    post = models.ForeignKey("GamePost", on_delete=models.CASCADE, related_name="game_reactions")
+    reaction = models.ForeignKey("Reaction", on_delete=models.CASCADE, related_name="game_post_reactions")
+    # other fields as needed

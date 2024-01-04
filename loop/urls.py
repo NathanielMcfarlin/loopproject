@@ -20,12 +20,20 @@ from rest_framework.routers import DefaultRouter
 from loopapi.views import (
     reactionViewSet,
     UserViewSet,
+    PlatformPostViewSet,
+    GamePostViewSet,
+    GameViewSet,
+    PlatformViewSet
 )
 
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r"reactions", reactionViewSet, "reaction")
 router.register(r"users", UserViewSet, "user")
+router.register(r"platform_posts", PlatformPostViewSet, "post")
+router.register(r"game_posts", GamePostViewSet, "post")
+router.register(r"games", GameViewSet, "game")
+router.register(r"platforms", PlatformViewSet, "platform")
 
 urlpatterns = [
     path("", include(router.urls)),
