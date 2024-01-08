@@ -23,12 +23,14 @@ from loopapi.views import (
     PlatformPostViewSet,
     GamePostViewSet,
     GameViewSet,
-    PlatformViewSet
+    PlatformViewSet,
+    PostReactionViewSet
 )
 
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r"reactions", reactionViewSet, "reaction")
+router.register(r"post_reactions", PostReactionViewSet, "post_reaction")
 router.register(r"users", UserViewSet, "user")
 router.register(r"platform_posts", PlatformPostViewSet, "post")
 router.register(r"game_posts", GamePostViewSet, "post")

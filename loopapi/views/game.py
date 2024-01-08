@@ -21,6 +21,10 @@ class GameViewSet(viewsets.ViewSet):
       return Response(serializer.data)
     except Game.DoesNotExist:
       return Response(status=status.HTTP_404_NOT_FOUND)
+    
+  def get_games_by_platform_id(platform_id):
+    games = Game.objects.filter(platform_id=platform_id)
+    return games
       
   def create(self, request):
       title = request.data.get("title")
