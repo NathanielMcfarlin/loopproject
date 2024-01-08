@@ -70,3 +70,7 @@ class reactionViewSet(viewsets.ViewSet):
 
         except Reaction.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def create_post_reaction(self,request, pk=None):
+        user = request.user
+        label = request.data.get("label")
