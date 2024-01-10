@@ -6,6 +6,9 @@ from django.contrib.auth.models import User
 from .reaction import ReactionSerializer
 from .platform import PlatformSerializer
 from .game import GameSerializer
+from django.core.exceptions import ObjectDoesNotExist
+
+
 
 class GamePostSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -35,15 +38,22 @@ class GamePostSerializer(serializers.ModelSerializer):
 class PlatformPostSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     is_staff = serializers.SerializerMethodField()
-    reactions = ReactionSerializer(many=True)
-    platform = PlatformSerializer(many=False)
+    is_owner = serializers.SerializerMethodField()
+    reactions = ReactionSerializer(many=True, read_only=True)
+    platform = PlatformSerializer(many=False, read_only=True)
+
     
     def get_is_staff(self, obj):
         # Check if the authenticated user is the owner
         return self.context["request"].user == obj.user
+    
+    def get_is_owner(self, obj):
+        return self.context["request"].user == obj.user
 
+    
     class Meta:
         model = PlatformPost
+    
         fields = [
             "id",
             "title",
@@ -55,8 +65,8 @@ class PlatformPostSerializer(serializers.ModelSerializer):
             "user",
             "reactions",
             "is_staff",
+            "is_owner"
         ]
-
 
 class PlatformPostViewSet(viewsets.ViewSet):
     def list(self, request):
@@ -113,35 +123,32 @@ class PlatformPostViewSet(viewsets.ViewSet):
         serializer = PlatformPostSerializer(post, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # def update(self, request, pk=None):
-    #     try:
-    #         post = PlatformPost.objects.get(pk=pk)
+    def update(self, request, pk=None):
+        try:
+            post = PlatformPost.objects.get(pk=pk)
+            serializer = PlatformPostSerializer(data=request.data)
+            if serializer.is_valid():
+                post.title = serializer.validated_data["title"]
+                post.link = serializer.validated_data["link"]
+                post.post_image_url = serializer.validated_data["post_image_url"]
+                # post.timestamp = serializer.validated_data["timestamp"]
+                # post.user = serializer.validated_data["user"]
+                post.description = serializer.validated_data["description"]
+                if request.data["platform"]:
+                    platform = Platform.objects.get(pk=request.data["platform"])
+                    post.platform = platform
+                # post.is_staff = serializer.validated_data["is_staff"]
+                post.save()
 
-    #         # Is the authenticated user allowed to edit this post?
-    #         self.check_object_permissions(request, post)
+                reaction_ids = request.data.get("reactions", [])
+                post.reactions.set(reaction_ids)
+                serializer = PlatformPostSerializer(post, context={"request": request})
+                return Response(None, status.HTTP_204_NO_CONTENT)
 
-    #         serializer = PlatformPostSerializer(post, data=request.data)
-    #         if serializer.is_valid():
-    #             # Update individual fields directly
-    #             post.user = serializer.validated_data.get("user", post.user)
-    #             post.title = serializer.validated_data.get("title", post.title)
-    #             post.post_image_url = serializer.validated_data.get("post_image_url", post.post_image_url)
-    #             post.description = serializer.validated_data.get("description", post.description)
-    #             post.is_staff = serializer.validated_data.get("is_staff", post.is_staff)
-    #             post.save()
+            return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
-    #             reactions_ids = request.data.get("reactions", [])
-    #             print("Reactions IDs extracted:", reactions_ids)
-    #             post.reactions.set(reactions_ids)
-
-    #             serializer = PlatformPostSerializer(post, context={"request": request})
-    #             return Response(serializer.data, status.HTTP_200_OK)
-
-    #         return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
-
-    #     except PlatformPost.DoesNotExist:
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, pk=None):
         try:

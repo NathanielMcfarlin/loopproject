@@ -1,7 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework import serializers
 from rest_framework.response import Response
+from rest_framework import permissions
 from loopapi.models import Game, Platform
+
+class IsGameCreator(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        # Assuming 'user' is the ForeignKey to the User model in your Game model
+        return obj.user == request.user
+
 
 class GameSerializer(serializers.ModelSerializer):
   class Meta:
@@ -9,6 +16,7 @@ class GameSerializer(serializers.ModelSerializer):
     fields = ["id", "title", "platform", "game_image_url"]
 
 class GameViewSet(viewsets.ViewSet):
+  permission_classes = [permissions.IsAuthenticated, IsGameCreator]
   def list(self, request):
     games = Game.objects.all()
     serializer = GameSerializer(games, many=True)
@@ -27,42 +35,40 @@ class GameViewSet(viewsets.ViewSet):
     return games
       
   def create(self, request):
-      title = request.data.get("title")
-      platform_id = request.data.get("platform")  # Corrected variable name
-      game_image_url = request.data.get("game_image_url")
+        title = request.data.get("title")
+        game_image_url = request.data.get("game_image_url")
+        platform_id = request.data.get("platform")
 
-      try:
-          platform = Platform.objects.get(pk=platform_id)
-      except Platform.DoesNotExist:
-          return Response({"error": "Platform does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            platform = Platform.objects.get(pk=platform_id)
+        except Platform.DoesNotExist:
+            return Response({"error": "Platform does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-      game = Game.objects.create(
-          title=title,
-          game_image_url=game_image_url,
-          platform=platform
-      )
+        # Associate the logged-in user as the creator of the game
+        game = Game.objects.create(
+            title=title,
+            game_image_url=game_image_url,
+            platform=platform,
+            user=request.user
+        )
 
-      serializer = GameSerializer(game, context={"request": request})
-      return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = GameSerializer(game, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
   
   def update(self, request, pk=None):
         try:
             game = Game.objects.get(pk=pk)
 
-            # Is the authenticated user allowed to edit this game?
+            # Ensure the request.user is the creator of the game
             self.check_object_permissions(request, game)
 
-            serializer = GameSerializer(data=request.data)
+            serializer = GameSerializer(game, data=request.data, partial=True)
             if serializer.is_valid():
-                game.game = serializer.validated_data["game"]
-                game.platform_image = serializer.validated_data["platform_image"]
-                game.save()
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
-                serializer = GameSerializer(game, context={"request": request})
-                return Response(None, status.HTTP_204_NO_CONTENT)
-
-            return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Game.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

@@ -13,8 +13,7 @@ class PlatformPost(models.Model):
     platform = models.ForeignKey("Platform", on_delete=models.CASCADE, related_name="platform_posts")
     is_staff = models.BooleanField()
     reactions = models.ManyToManyField("Reaction", through="PlatformPostReaction", related_name="platform_posts")
-
-
+    
 class GamePost(models.Model):
     """Database model for tracking events"""
 
