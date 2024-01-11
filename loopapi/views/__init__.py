@@ -5,3 +5,4 @@ from .post import GamePostViewSet
 from .game import GameViewSet
 from .platform import PlatformViewSet
 from .post_reaction import PostReactionViewSet
+from .likes import LikesViewSet

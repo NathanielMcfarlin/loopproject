@@ -7,39 +7,15 @@ from .reaction import ReactionSerializer
 from .platform import PlatformSerializer
 from .game import GameSerializer
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
+import json
 
-
-
-class GamePostSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    is_staff = serializers.SerializerMethodField()
-    reactions = ReactionSerializer(many=True)
-    game = GameSerializer(many=False)
-    
-    def get_is_staff(self, obj):
-        # Check if the authenticated user is the owner
-        return self.context["request"].user == obj.user
-
-    class Meta:
-        model = GamePost
-        fields = [
-            "id",
-            "title",
-            "description",
-            "post_image_url",
-            "link",
-            "timestamp",
-            "game",
-            "user",
-            "reactions",
-            "is_staff"
-        ]
 
 class PlatformPostSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     is_staff = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
-    reactions = ReactionSerializer(many=True, read_only=True)
+    # reactions = ReactionSerializer(many=True, read_only=True)
     platform = PlatformSerializer(many=False, read_only=True)
 
     
@@ -63,7 +39,7 @@ class PlatformPostSerializer(serializers.ModelSerializer):
             "timestamp",
             "platform",
             "user",
-            "reactions",
+            "likes",
             "is_staff",
             "is_owner"
         ]
@@ -94,6 +70,7 @@ class PlatformPostViewSet(viewsets.ViewSet):
         post_image_url = request.data.get("post_image_url")
         description = request.data.get("description")
         is_staff = request.data.get("is_staff")
+        
 
         try:
             platform_id = request.data.get("platform")
@@ -160,8 +137,35 @@ class PlatformPostViewSet(viewsets.ViewSet):
 
         except PlatformPost.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+    
 
 #! ------------------------------------------End of platfrom post viewset--------------------------------------------------------------------------
+
+
+class GamePostSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    is_staff = serializers.SerializerMethodField()
+    reactions = ReactionSerializer(many=True)
+    game = GameSerializer(many=False)
+    
+    def get_is_staff(self, obj):
+        # Check if the authenticated user is the owner
+        return self.context["request"].user == obj.user
+
+    class Meta:
+        model = GamePost
+        fields = [
+            "id",
+            "title",
+            "description",
+            "post_image_url",
+            "link",
+            "timestamp",
+            "game",
+            "user",
+            "reactions",
+            "is_staff"
+        ]
 
 class GamePostViewSet(viewsets.ViewSet):
     def list(self, request):
