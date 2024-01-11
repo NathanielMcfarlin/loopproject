@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 class PlatformPost(models.Model):
     """Database model for tracking events"""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="platform_posts")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="name")
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=1000)
     post_image_url = models.URLField()
@@ -12,7 +12,7 @@ class PlatformPost(models.Model):
     timestamp = models.DateField(auto_now_add=True)
     platform = models.ForeignKey("Platform", on_delete=models.CASCADE, related_name="platform_posts")
     is_staff = models.BooleanField()
-    reactions = models.ManyToManyField("Reaction", through="PlatformPostReaction", related_name="platform_posts")
+    likes = models.ManyToManyField(User, related_name="platform_posts")
     
 class GamePost(models.Model):
     """Database model for tracking events"""

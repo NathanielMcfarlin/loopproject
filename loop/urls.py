@@ -24,7 +24,8 @@ from loopapi.views import (
     GamePostViewSet,
     GameViewSet,
     PlatformViewSet,
-    PostReactionViewSet
+    PostReactionViewSet,
+    LikesViewSet
 )
 
 
@@ -36,11 +37,12 @@ router.register(r"platform_posts", PlatformPostViewSet, "post")
 router.register(r"game_posts", GamePostViewSet, "post")
 router.register(r"games", GameViewSet, "game")
 router.register(r"platforms", PlatformViewSet, "platform")
+router.register(r'likes', LikesViewSet, "likes")
 
 urlpatterns = [
     path("", include(router.urls)),
     path("login", UserViewSet.as_view({"post": "user_login"}), name="login"),
     path(
         "register", UserViewSet.as_view({"post": "register_account"}), name="register"
-    ),
+    )
 ]
