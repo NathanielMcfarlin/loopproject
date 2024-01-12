@@ -17,6 +17,7 @@ class PlatformPostSerializer(serializers.ModelSerializer):
     is_owner = serializers.SerializerMethodField()
     # reactions = ReactionSerializer(many=True, read_only=True)
     platform = PlatformSerializer(many=False, read_only=True)
+    liked = serializers.SerializerMethodField()
 
     
     def get_is_staff(self, obj):
@@ -25,8 +26,18 @@ class PlatformPostSerializer(serializers.ModelSerializer):
     
     def get_is_owner(self, obj):
         return self.context["request"].user == obj.user
-
     
+    def get_liked(self, obj):
+        msg = False
+    
+        if self.context["request"].user:
+            user = self.context["request"].user
+    
+        if  obj.likes.filter(id=user.id).exists():
+            msg = True
+
+        return msg
+
     class Meta:
         model = PlatformPost
     
@@ -41,8 +52,25 @@ class PlatformPostSerializer(serializers.ModelSerializer):
             "user",
             "likes",
             "is_staff",
-            "is_owner"
+            "is_owner",
+            "liked"
         ]
+
+class UpdatePlatformPostSerializer(serializers.ModelSerializer):
+    platform = PlatformSerializer(many=False, read_only=True)
+
+
+    class Meta:
+        model = PlatformPost
+    
+        fields = [
+            "title",
+            "description",
+            "post_image_url",
+            "link",
+            "platform",
+        ]
+
 
 class PlatformPostViewSet(viewsets.ViewSet):
     def list(self, request):
@@ -93,9 +121,9 @@ class PlatformPostViewSet(viewsets.ViewSet):
         )
 
         # Establish the many-to-many relationships
-        reactions_ids = request.data.get("reactions", [])
-        print("Reactions IDs extracted:", reactions_ids)
-        post.reactions.set(reactions_ids)
+        # reactions_ids = request.data.get("reactions", [])
+        # print("Reactions IDs extracted:", reactions_ids)
+        # post.reactions.set(reactions_ids)
 
         serializer = PlatformPostSerializer(post, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -103,7 +131,7 @@ class PlatformPostViewSet(viewsets.ViewSet):
     def update(self, request, pk=None):
         try:
             post = PlatformPost.objects.get(pk=pk)
-            serializer = PlatformPostSerializer(data=request.data)
+            serializer = UpdatePlatformPostSerializer(data=request.data)
             if serializer.is_valid():
                 post.title = serializer.validated_data["title"]
                 post.link = serializer.validated_data["link"]
@@ -117,8 +145,7 @@ class PlatformPostViewSet(viewsets.ViewSet):
                 # post.is_staff = serializer.validated_data["is_staff"]
                 post.save()
 
-                reaction_ids = request.data.get("reactions", [])
-                post.reactions.set(reaction_ids)
+                
                 serializer = PlatformPostSerializer(post, context={"request": request})
                 return Response(None, status.HTTP_204_NO_CONTENT)
 
